@@ -1,0 +1,78 @@
+---
+title: "transformation of the datasets"
+author: "Yi Zhang ; yz3006"
+date: "11/15/2017"
+output: html_document
+---
+
+```{r}
+install.packages("Matrix")
+library("Matrix")
+setwd("~/Desktop/fall2017-project4-group9-master")  # set your own working directory
+```
+
+###Process Dataset 1--MsWeb
+```{r}
+webtrain<-read.csv("./data/MS_sample/data_train.csv",header = T,sep = ",")
+webtest<-read.csv("./data/MS_sample/data_test.csv",header = T,sep = ",")
+#max(webtrain[webtrain$V1=="C","V3"])
+#min(webtrain[webtrain$V1=="C","V3"])
+n<-nrow(webtrain)
+for (i in 1:n) {
+
+   if(webtrain$V1[i]=="C") {
+     webtrain[i:n,"V3"]<- rep(webtrain$V2[i],(n-i+1))
+    }
+
+}
+ #V3-user; V2-web
+Ms_train<-webtrain[webtrain$V1=="V",]
+Ms_train$V4<-rep(1,nrow(Ms_train))
+Ms_train$V2<-Ms_train$V2-min(Ms_train$V2)+1  #min v2=1000
+Ms_train$V3<-Ms_train$V3-min(Ms_train$V3)+1  #min v3=10010
+Ms_train<-sparseMatrix(i=Ms_train$V3,j=Ms_train$V2,x=Ms_train$V4)
+# train data for msweb:
+Ms_train<-as.data.frame(as.matrix(Ms_train)) 
+train_MS<-Ms_train[rowSums(Ms_train)!=0,colSums(Ms_train)!=0]
+#dim(train_MS)
+write.csv(train_MS,file = "./output/train_MS.csv")  # save train data for MsWeb as train_MS.csv
+#############################################################################
+ m<-nrow(webtest)
+for (i in 1:m) {
+
+   if(webtest$V1[i]=="C") {
+     webtest[i:m,"V3"]<- rep(webtest$V2[i],(m-i+1))
+    }
+
+}
+Ms_test<-webtest[webtest$V1=="V", ]
+Ms_test$V4<-rep(1,nrow(Ms_test) )
+Ms_test$V2<-Ms_test$V2-1000+1   
+Ms_test$V3<-Ms_test$V3-10010+1
+Ms_test<-sparseMatrix(i=Ms_test$V3,j=Ms_test$V2,x=Ms_test$V4)
+# test data for msweb:
+Ms_test<-as.data.frame(as.matrix(Ms_test))  
+test_MS<-Ms_test[rowSums(Ms_test)!=0,colSums(Ms_test)!=0]
+dim(test_MS)
+write.csv(test_MS,file = "./output/test_MS.csv")  #save test data for MsWeb as test_MS.csv
+```
+
+
+###Process Dataset 2--Eachmoive
+```{r}
+moviestrain<-read.csv("./data/eachmovie_sample/data_train.csv",header = T,sep = ",")
+moviestest<-read.csv("./data/eachmovie_sample/data_test.csv",header = T,sep = ",")
+eachmovie_train<-sparseMatrix(i=moviestrain$User,j=moviestrain$Movie,x=moviestrain$Score)
+eachmovie_train<-as.data.frame(as.matrix(eachmovie_train)) 
+#train data for eachmovie dataset:
+train_movie<-eachmovie_train[rowSums(eachmovie_train)!=0, colSums(eachmovie_train)!=0] 
+#dim(train_movie)
+write.csv(train_movie,file = "./output/train_movie.csv")  # save the dataset as train_movie.csv
+#############################################################################################
+eachmovie_test<-sparseMatrix(i=moviestest$User,j=moviestest$Movie,x=moviestest$Score)
+eachmovie_test<-as.data.frame(as.matrix(eachmovie_test)) 
+# test data for eachmovie dataset:
+test_movie<-eachmovie_test[rowSums(eachmovie_test)!=0, colSums(eachmovie_test)!=0] 
+#dim(test_movie)
+write.csv(test_movie,file = "./output/test_movie.csv")   # save the dataset as test_movie.csv
+```
