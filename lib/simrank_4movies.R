@@ -267,19 +267,19 @@ predicton<-function(a,j,select.neighbor=100){
   
   
   #variance weights
-  p2=p+sum(w_var.weight*(train_data[sim_users,j]-sim_means))
-  p2_zscore=p+var_wo_0(train_data[a,])*sum(w_var.weight*(train_data[sim_users,j]-sim_means)/sim_vars)
+  # p2=p+sum(w_var.weight*(train_data[sim_users,j]-sim_means))
+  # p2_zscore=p+var_wo_0(train_data[a,])*sum(w_var.weight*(train_data[sim_users,j]-sim_means)/sim_vars)
   
   #select neighbor
-  # p3=p+sum(w_selected.nei*(train_data[sim_users[1:select.neighbor],j]-sim_means[1:select.neighbor]))
-  # p3_zscore=p+var_wo_0(train_data[a,])*sum(w_selected.nei*(train_data[sim_users[1:select.neighbor],j]-sim_means[1:select.neighbor])/sim_vars[1:select.neighbor])
+  p3=p+sum(w_selected.nei*(train_data[sim_users[1:select.neighbor],j]-sim_means[1:select.neighbor]))
+  p3_zscore=p+var_wo_0(train_data[a,])*sum(w_selected.nei*(train_data[sim_users[1:select.neighbor],j]-sim_means[1:select.neighbor])/sim_vars[1:select.neighbor])
   
   #select neighbor + variance weight
   p4=p+sum(w_var.weight_selected.nei*(train_data[sim_users[1:select.neighbor],j]-sim_means[1:select.neighbor]))
   p4_zscore=p+var_wo_0(train_data[a,])*sum(w_var.weight_selected.nei*(train_data[sim_users[1:select.neighbor],j]-sim_means[1:select.neighbor])/sim_vars[1:select.neighbor])
   
   #return(c(p1,p1_zscore,p2,p2_zscore,p3,p3_zscore,p4,p4_zscore))
-  return(c(p2,p2_zscore,p4,p4_zscore))
+  return(c(p3,p3_zscore,p4,p4_zscore))
 }
 
 movies_test$p1=NA
@@ -296,14 +296,19 @@ movies_test$p4_zscore=NA
 
 movies_test$err=NA
 
-movies_test_20nei<-movies_test
+movies_test_200nei<-movies_test
+movies_test_200nei[,c("p3","p3_zscore","p4","p4_zscore")]<-NA
 movies_test_50nei<-movies_test
+movies_test_50nei[,c("p3","p3_zscore","p4","p4_zscore")]<-NA
+
 for(i in 1:nrow(movies_test)){
   if(i%%100==0){print(i)}
   x=movies_test[i,]
   #y=predicton(x$User,x$Movie)
-  movies_test_20nei[i,c("p2","p2_zscore","p4","p4_zscore")]<-predicton(as.character(x$User),as.character(x$Movie),select.neighbor = 20)
-  movies_test_50nei[i,c("p2","p2_zscore","p4","p4_zscore")]<-predicton(as.character(x$User),as.character(x$Movie),select.neighbor = 50)
+  #movies_test[i,4:11]<-predicton(as.character(x$User),as.character(x$Movie))
+
+  movies_test_200nei[i,c("p3","p3_zscore","p4","p4_zscore")]<-predicton(as.character(x$User),as.character(x$Movie),select.neighbor = 200)
+  movies_test_50nei[i,c("p3","p3_zscore","p4","p4_zscore")]<-predicton(as.character(x$User),as.character(x$Movie),select.neighbor = 50)
 }
 
 #test_results<-movies_test
