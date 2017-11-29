@@ -242,9 +242,9 @@ predicton<-function(a,j,select.neighbor=100){
   
   w=(users_mat[a,sim_users]/sum(users_mat[a,sim_users]))
   
-  ## variance weight
-  w_var.weight=users_mat[a,sim_users]*((sim_vars-var_min)/var_max)/sum((sim_vars-var_min)/var_max)
-  
+  # # variance weight
+  # w_var.weight=users_mat[a,sim_users]*((sim_vars-var_min)/var_max)/sum((sim_vars-var_min)/var_max)
+
   if(select.neighbor!=0){
     if(length(w)>select.neighbor){
       ##select neighbors
@@ -267,19 +267,19 @@ predicton<-function(a,j,select.neighbor=100){
   
   
   #variance weights
-  # p2=p+sum(w_var.weight*(train_data[sim_users,j]-sim_means))
-  # p2_zscore=p+var_wo_0(train_data[a,])*sum(w_var.weight*(train_data[sim_users,j]-sim_means)/sim_vars)
+  #p2=p+sum(w_var.weight*(train_data[sim_users,j]-sim_means))
+  #p2_zscore=p+var_wo_0(train_data[a,])*sum(w_var.weight*(train_data[sim_users,j]-sim_means)/sim_vars)
   
   #select neighbor
   p3=p+sum(w_selected.nei*(train_data[sim_users[1:select.neighbor],j]-sim_means[1:select.neighbor]))
-  p3_zscore=p+var_wo_0(train_data[a,])*sum(w_selected.nei*(train_data[sim_users[1:select.neighbor],j]-sim_means[1:select.neighbor])/sim_vars[1:select.neighbor])
+  # p3_zscore=p+var_wo_0(train_data[a,])*sum(w_selected.nei*(train_data[sim_users[1:select.neighbor],j]-sim_means[1:select.neighbor])/sim_vars[1:select.neighbor])
   
   #select neighbor + variance weight
-  p4=p+sum(w_var.weight_selected.nei*(train_data[sim_users[1:select.neighbor],j]-sim_means[1:select.neighbor]))
-  p4_zscore=p+var_wo_0(train_data[a,])*sum(w_var.weight_selected.nei*(train_data[sim_users[1:select.neighbor],j]-sim_means[1:select.neighbor])/sim_vars[1:select.neighbor])
+  # p4=p+sum(w_var.weight_selected.nei*(train_data[sim_users[1:select.neighbor],j]-sim_means[1:select.neighbor]))
+  # p4_zscore=p+var_wo_0(train_data[a,])*sum(w_var.weight_selected.nei*(train_data[sim_users[1:select.neighbor],j]-sim_means[1:select.neighbor])/sim_vars[1:select.neighbor])
   
   #return(c(p1,p1_zscore,p2,p2_zscore,p3,p3_zscore,p4,p4_zscore))
-  return(c(p3,p3_zscore,p4,p4_zscore))
+  return(c(p3))
 }
 
 movies_test$p1=NA
@@ -315,6 +315,9 @@ for(i in 1:nrow(movies_test)){
 #test_results_50nei<-movies_test_50nei
 #save(test_results_50nei,file="~/Desktop/test_results_ROC4_50nei.RData")
 #save(test_results,file="~/Desktop/test_results_ROC4_100nei.RData")
+
+system.time(predicton(as.character(x$User),as.character(x$Movie),select.neighbor = 100))
+
 
 ## MAE
 cal_mae<-function(pred,score){

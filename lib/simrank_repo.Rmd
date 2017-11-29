@@ -1,0 +1,97 @@
+---
+title: "main_file_SimRank"
+author: "Xin Luo"
+date: "2017/11/29"
+output: html_document
+---
+
+
+##### functions for Calculating the MAE and ROC
+```{r,message=F}
+## MAE
+cal_mae<-function(pred,score){
+  return(mean(abs(round(pred)-score),na.rm = T))
+}
+
+
+## ROC
+library(pROC)
+cal_roc<-function(pred,score){
+  pred=ifelse(round(pred)>=4,1,0)
+  score=ifelse(score>=4,1,0)
+  roc_obj <- roc(pred, score)
+  return(auc(roc_obj))
+}
+```
+
+##### Load the test results
+```{r}
+load("~/Desktop/[ADS]Advanced Data Science/fall2017-project4-group9/output/test_results_ROC4_50nei.RData")
+load("~/Desktop/[ADS]Advanced Data Science/fall2017-project4-group9/output/test_results_ROC4_100nei.RData")
+load("~/Desktop/[ADS]Advanced Data Science/fall2017-project4-group9/output/test_results_ROC4_200nei.RData")
+
+result_table<-matrix(NA,16,4)
+result_table<-as.data.frame(result_table)
+colnames(result_table)<-c("Algorithm","Normalization","MEA","ROC")
+result_table$Algorithm<-c("SimRank","SimRank",
+                          "SimRank+Var.Weight","SimRank+Var.Weight",
+                          "SimRank+Sel.Nei100","SimRank+Sel.Nei100",
+                          "SimRank+Var.Weight+Sel.Nei100","SimRank+Var.Weight+Sel.Nei100",
+                          
+                          "SimRank+Sel.Nei50","SimRank+Sel.Nei50",
+                          "SimRank+Var.Weight+Sel.Nei50","SimRank+Var.Weight+Sel.Nei50",
+                          
+                          "SimRank+Sel.Nei200","SimRank+Sel.Nei200",
+                          "SimRank+Var.Weight+Sel.Nei200","SimRank+Var.Weight+Sel.Nei200"
+                          )
+
+result_table$Normalization<-rep(c("dev.from.mean","z-score"),8)
+
+result_table$MEA<-c(cal_mae(test_results$p1,test_results$Score),
+                    cal_mae(test_results$p1_zscore,test_results$Score),
+                    cal_mae(test_results$p2,test_results$Score),
+                    cal_mae(test_results$p2_zscore,test_results$Score),
+                    cal_mae(test_results$p3,test_results$Score),
+                    cal_mae(test_results$p3_zscore,test_results$Score),
+                    cal_mae(test_results$p4,test_results$Score),
+                    cal_mae(test_results$p4_zscore,test_results$Score),
+                    
+                    cal_mae(test_results_50nei$p3,test_results$Score),
+                    cal_mae(test_results_50nei$p3_zscore,test_results$Score),
+                    cal_mae(test_results_50nei$p4,test_results$Score),
+                    cal_mae(test_results_50nei$p4_zscore,test_results$Score),
+                    
+                    cal_mae(test_results_200nei$p3,test_results$Score),
+                    cal_mae(test_results_200nei$p3_zscore,test_results$Score),
+                    cal_mae(test_results_200nei$p4,test_results$Score),
+                    cal_mae(test_results_200nei$p4_zscore,test_results$Score)
+                    
+                    
+                    )
+
+
+result_table$ROC<-c(cal_roc(test_results$p1,test_results$Score),
+                    cal_roc(test_results$p1_zscore,test_results$Score),
+                    cal_roc(test_results$p2,test_results$Score),
+                    cal_roc(test_results$p2_zscore,test_results$Score),
+                    cal_roc(test_results$p3,test_results$Score),
+                    cal_roc(test_results$p3_zscore,test_results$Score),
+                    cal_roc(test_results$p4,test_results$Score),
+                    cal_roc(test_results$p4_zscore,test_results$Score),
+                    
+                    cal_roc(test_results_50nei$p3,test_results$Score),
+                    cal_roc(test_results_50nei$p3_zscore,test_results$Score),
+                    cal_roc(test_results_50nei$p4,test_results$Score),
+                    cal_roc(test_results_50nei$p4_zscore,test_results$Score),
+                    
+                    cal_roc(test_results_200nei$p3,test_results$Score),
+                    cal_roc(test_results_200nei$p3_zscore,test_results$Score),
+                    cal_roc(test_results_200nei$p4,test_results$Score),
+                    cal_roc(test_results_200nei$p4_zscore,test_results$Score)
+                    )
+
+result_table$time_pppm<-rep(c(0.065,0.065,0.065,0.066,0.063,0.065,0.065,0.067),each=2)
+
+print(result_table)
+```
+
