@@ -1,0 +1,247 @@
+---
+title: "Main__file"
+author: "Yi Zhang ; yz3006"
+date: "11/29/2017"
+output: html_document
+---
+##### Functions for Calculating the MAE and ROC and RankedScore
+```{r}
+Pearson=FALSE     # Set TRUE or FALSE to the method of Similarity Weight you use
+MeanSquareDiff=FALSE
+VectorSimilarity=TRUE
+SimRank=TRUE
+
+if(VectorSimilarity|MeanSquareDiff|Pearson)
+{
+########Calculate MAE & ROC & RankScore
+mae<-function(testdata,predscore){
+predscore<-predscore[,names(testdata)]
+test<-as.vector(unlist(testdata))
+pred<-as.vector(predscore)
+pred[which(test==0)]<-0
+MAE<-sum(abs(pred-test))/sum(test!=0)
+return(MAE)
+}
+
+#install.packages("pROC")
+roc_4<-function(testdata,predscore) {
+library("pROC" )
+predscore<-predscore[,names(testdata)]
+predscore[which(testdata==0)]<-0
+pred<-ifelse(round(predscore)>=4,1,0 )
+test<-ifelse(testdata>=4,1,0)
+roc_4 <-roc(as.vector(pred),as.vector(test))
+area<-auc(roc_4 )
+return(area)
+}
+RankScore<-function(scorepred,testdata){
+pred.scores<-scorepred[rownames(testdata),colnames(testdata)]
+pred.scores[which(testdata==0)]<-0
+Rankk<-vector(length = nrow(pred.scores))
+for (i in 1:length(Rankk)) {
+    score_i<-pred.scores[i,]
+    id_dec<-order(score_i,decreasing = T)
+    score_dec<-score_i[id_dec]
+    score_dec[which(as.numeric(score_dec)<0)]<-0
+    j<-1:ncol(df)
+    Rankk[i]<-sum(score_dec/(2^((j-1)/4)))
+}
+RankMax<-vector(length = nrow(testdata))
+for (i in 1:length(RankMax)) {
+    score_i<-testdata[i,]
+    id_dec<-order(score_i,decreasing = T)
+    score_dec<-score_i[id_dec]
+    score_dec[which(as.numeric(score_dec)<0)]<-0
+    j<-1:ncol(testdata)
+    RankMax[i]<-sum(as.numeric(score_dec/2^((j-1)/4)))
+}
+   return(100*sum(Rankk)/sum(RankMax))
+  }
+}
+
+#####----------------------------------------------------#####
+if(SimRank)
+  {
+  ########Calculate MAE&ROC
+  cal_mae<-function(pred,score){
+  return(mean(abs(round(pred)-score),na.rm = T))
+}
+
+library(pROC)
+cal_roc<-function(pred,score)
+  {
+  pred=ifelse(round(pred)>=4,1,0)
+  score=ifelse(score>=4,1,0)
+  roc_obj <- roc(pred, score)
+  return(auc(roc_obj))
+  }
+}
+```
+
+
+##### Load the test results for dataset2-eachmovie
+```{r}
+#please set the "fall2017-project4-group9" as your working directory
+if(VectorSimilarity)
+{
+test_movie<-read.csv("./output/test_movie.csv",check.names=FALSE,row.names=1)
+load("./output/pred1.Rdata")
+load("./output/pred2.Rdata")
+load("./output/pred3.Rdata")
+load("./output/pred4.Rdata")
+load("./output/pred5.Rdata")
+load("./output/pred6.Rdata")
+load("./output/pred7.Rdata")
+load("./output/pred8.Rdata")
+
+mae.NV.NS.DEV<-mae(test_movie,NV.NS.Dev.Score)
+roc.NV.NS.DEV<-as.numeric(roc_4(test_movie,NV.NS.Dev.Score))
+mae.NV.NS.Z<-mae(test_movie,NV.NS.Z.Score)
+roc.NV.NS.Z<-as.numeric(roc_4(test_movie,NV.NS.Z.Score))
+mae.NV.S50.DEV<-mae(test_movie,NV.S50.Dev.Score)
+roc.NV.S50.DEV<-as.numeric(roc_4(test_movie,NV.S50.Dev.Score))
+mae.NV.S50.Z<-mae(test_movie,NV.S50.Z.Score )
+roc.NV.S50.Z<-as.numeric(roc_4(test_movie,NV.S50.Z.Score ))
+mae.V.NS.DEV<-mae(test_movie,V.NS.Dev.Score)
+roc.V.NS.DEV<-as.numeric(roc_4(test_movie,V.NS.Dev.Score))
+mae.V.NS.Z<-mae(test_movie,V.NS.Z.Score)
+roc.V.NS.Z<-as.numeric(roc_4(test_movie,V.NS.Z.Score))
+mae.V.S50.DEV<-mae(test_movie,V.S50.Dev.Score)
+roc.V.S50.DEV<-as.numeric(roc_4(test_movie,V.S50.Dev.Score))
+mae.V.S50.Z<-mae(test_movie,V.S50.Z.Score)
+roc.V.S50.Z<-as.numeric(roc_4(test_movie,V.S50.Z.Score))
+
+result_vecsimi_movie<-matrix(NA,8,4)
+result_vecsimi_movie<-as.data.frame(result_vecsimi)
+names(result_vecsimi_movie)<-c("Algorithm","Normalization","MAE","ROC")
+result_vecsimi_movie$Algorithm<-as.vector(rep(c("VecSimi-no Var-no Sel","VecSimi-no Var-Sel","VecSimi-Var-no Sel","VecSimi-Var-Sel"),each=2))
+result_vecsimi_movie$Normalization<-as.vector(rep(c("dev.from.mean","Z-score"),4))
+result_vecsimi_movie$MAE<-c(mae.NV.NS.DEV, mae.NV.NS.Z, mae.NV.S50.DEV, mae.NV.S50.Z, mae.V.NS.DEV, mae.V.NS.Z, mae.V.S50.DEV, mae.V.S50.Z)
+result_vecsimi_movie$ROC<-c(roc.NV.NS.DEV, roc.NV.NS.Z, roc.NV.S50.DEV, roc.NV.S50.Z, roc.V.NS.DEV, roc.V.NS.Z, roc.V.S50.DEV, roc.V.S50.Z)
+
+print(result_vecsimi_movie)
+}
+
+if(SimRank)
+  {
+load("./output/test_results_ROC4_50nei.RData")
+load("./output/test_results_ROC4_100nei.RData")
+load("./output/test_results_ROC4_200nei.RData")
+
+####Set up a result table that shows all of the combinations with select bestN=50,100,200 by using SimRank
+result_table<-matrix(NA,16,4)
+result_table<-as.data.frame(result_table)
+colnames(result_table)<-c("Algorithm","Normalization","MEA","ROC")
+result_table$Algorithm<-c("SimRank","SimRank",
+                          "SimRank+Var.Weight","SimRank+Var.Weight",
+                          "SimRank+Sel.Nei100","SimRank+Sel.Nei100",
+                          "SimRank+Var.Weight+Sel.Nei100","SimRank+Var.Weight+Sel.Nei100",
+                          
+                          "SimRank+Sel.Nei50","SimRank+Sel.Nei50",
+                          "SimRank+Var.Weight+Sel.Nei50","SimRank+Var.Weight+Sel.Nei50",
+                          
+                          "SimRank+Sel.Nei200","SimRank+Sel.Nei200",
+                          "SimRank+Var.Weight+Sel.Nei200","SimRank+Var.Weight+Sel.Nei200"
+                          )
+
+result_table$Normalization<-rep(c("dev.from.mean","z-score"),8)
+
+result_table$MEA<-c(cal_mae(test_results$p1,test_results$Score),
+                    cal_mae(test_results$p1_zscore,test_results$Score),
+                    cal_mae(test_results$p2,test_results$Score),
+                    cal_mae(test_results$p2_zscore,test_results$Score),
+                    cal_mae(test_results$p3,test_results$Score),
+                    cal_mae(test_results$p3_zscore,test_results$Score),
+                    cal_mae(test_results$p4,test_results$Score),
+                    cal_mae(test_results$p4_zscore,test_results$Score),
+                    
+                    cal_mae(test_results_50nei$p3,test_results$Score),
+                    cal_mae(test_results_50nei$p3_zscore,test_results$Score),
+                    cal_mae(test_results_50nei$p4,test_results$Score),
+                    cal_mae(test_results_50nei$p4_zscore,test_results$Score),
+                    
+                    cal_mae(test_results_200nei$p3,test_results$Score),
+                    cal_mae(test_results_200nei$p3_zscore,test_results$Score),
+                    cal_mae(test_results_200nei$p4,test_results$Score),
+                    cal_mae(test_results_200nei$p4_zscore,test_results$Score)
+                    
+                    
+                    )
+
+result_table$ROC<-c(cal_roc(test_results$p1,test_results$Score),
+                    cal_roc(test_results$p1_zscore,test_results$Score),
+                    cal_roc(test_results$p2,test_results$Score),
+                    cal_roc(test_results$p2_zscore,test_results$Score),
+                    cal_roc(test_results$p3,test_results$Score),
+                    cal_roc(test_results$p3_zscore,test_results$Score),
+                    cal_roc(test_results$p4,test_results$Score),
+                    cal_roc(test_results$p4_zscore,test_results$Score),
+                    
+                    cal_roc(test_results_50nei$p3,test_results$Score),
+                    cal_roc(test_results_50nei$p3_zscore,test_results$Score),
+                    cal_roc(test_results_50nei$p4,test_results$Score),
+                    cal_roc(test_results_50nei$p4_zscore,test_results$Score),
+                    
+                    cal_roc(test_results_200nei$p3,test_results$Score),
+                    cal_roc(test_results_200nei$p3_zscore,test_results$Score),
+                    cal_roc(test_results_200nei$p4,test_results$Score),
+                    cal_roc(test_results_200nei$p4_zscore,test_results$Score)
+                    )
+
+result_table$time_pppm<-rep(c(0.065,0.065,0.065,0.066,0.063,0.065,0.065,0.067),each=2)
+
+print(result_table)
+}
+
+if(Pearson)
+  {
+#####Show the Evaluation Table by using Pearson Coeffienct
+  load("./eachmovie_PearsonCorrErrorOutput.RData")
+  
+  print(eachmovie_errors_final)
+}
+```
+
+
+##### Load the test results for dataset2-eachmovie
+```{r}
+if(VectorSimilarity)
+ {
+load("./data/pred1.web.Rdata")
+load("./data/pred1.web.Rdata")
+load("./data/pred1.web.Rdata")
+load("./data/pred1.web.Rdata")
+load("./data/pred1.web.Rdata")
+load("./data/pred1.web.Rdata")
+load("./data/pred1.web.Rdata")
+load("./data/pred1.web.Rdata")
+rs.1<-RankScore(NV.NS.Dev.web,test_web)
+rs.2<-RankScore(NV.NS.Z.web, test_web)
+rs.3<-RankScore(NV.S50.Dev.web, test_web)
+rs.4<-RankScore(NV.S50.Z.web,test_web)
+rs.5<-RankScore(V.NS.Dev.web,test_web)
+rs.6<-RankScore(V.NS.Z.web, test_web)
+rs.7<-RankScore(V.S50.Dev.web, test_web)
+rs.8<-RankScore(V.S50.Z.web,test_web)
+
+result_vecsimi_web<-matrix(NA,8,3)
+result_vecsimi_web<-as.data.frame(result_vecsimi_web)
+names(result_vecsimi_web)<-c("Algorithm","Normalization","RankedScoring")
+result_vecsimi_web$Algorithm<-as.vector(rep(c("VecSimi-no Var-no Sel","VecSimi-no Var-Sel","VecSimi-Var-no Sel","VecSimi-Var-Sel"),each=2))
+result_vecsimi_web$Normalization<-as.vector(rep(c("dev.from.mean","Z-score"),4))
+result_vecsimi_web$RankedScoring<-c(rs.1,rs.2,rs.3,rs.4,rs.5,rs.6,rs.7,rs.8)
+
+print(result_vecsimi_web)
+}
+
+if(Pearson)
+  {
+#####Show the Evaluation Table by using Pearson Coeffienct
+  
+  load("./msweb_PearsonCorrErrorOutput.RData")
+  
+   print(msweb_errors_final)
+}
+
+```
+
