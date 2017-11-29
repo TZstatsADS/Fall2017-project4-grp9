@@ -78,10 +78,55 @@ cal_roc<-function(pred,score)
 }
 ```
 
+##### Load the test results for dataset1-web
+```{r}
+if(VectorSimilarity)
+ {
+load("./data/pred1.web.Rdata")
+load("./data/pred1.web.Rdata")
+load("./data/pred1.web.Rdata")
+load("./data/pred1.web.Rdata")
+load("./data/pred1.web.Rdata")
+load("./data/pred1.web.Rdata")
+load("./data/pred1.web.Rdata")
+load("./data/pred1.web.Rdata")
+rs.1<-RankScore(NV.NS.Dev.web,test_web)
+rs.2<-RankScore(NV.NS.Z.web, test_web)
+rs.3<-RankScore(NV.S50.Dev.web, test_web)
+rs.4<-RankScore(NV.S50.Z.web,test_web)
+rs.5<-RankScore(V.NS.Dev.web,test_web)
+rs.6<-RankScore(V.NS.Z.web, test_web)
+rs.7<-RankScore(V.S50.Dev.web, test_web)
+rs.8<-RankScore(V.S50.Z.web,test_web)
+
+result_vecsimi_web<-matrix(NA,8,3)
+result_vecsimi_web<-as.data.frame(result_vecsimi_web)
+names(result_vecsimi_web)<-c("Algorithm","Normalization","RankedScoring")
+result_vecsimi_web$Algorithm<-as.vector(rep(c("VecSimi-no Var-no Sel","VecSimi-no Var-Sel","VecSimi-Var-no Sel","VecSimi-Var-Sel"),each=2))
+result_vecsimi_web$Normalization<-as.vector(rep(c("dev.from.mean","Z-score"),4))
+result_vecsimi_web$RankedScoring<-c(rs.1,rs.2,rs.3,rs.4,rs.5,rs.6,rs.7,rs.8)
+
+print(result_vecsimi_web)
+}
+
+if(Pearson)
+  {
+#####Show the Evaluation Table by using Pearson Coeffienct
+  
+  load("./msweb_PearsonCorrErrorOutput.RData")
+   print("The results from Vector Simiarity")
+   print(msweb_errors_final)
+}
+
+```
+
+
 
 ##### Load the test results for dataset2-eachmovie
 ```{r}
 #please set the "fall2017-project4-group9" as your working directory
+setwd("~/Desktop/[ADS]Advanced Data Science/fall2017-project4-group9/")
+
 if(VectorSimilarity)
 {
 test_movie<-read.csv("./output/test_movie.csv",check.names=FALSE,row.names=1)
@@ -119,6 +164,7 @@ result_vecsimi_movie$Normalization<-as.vector(rep(c("dev.from.mean","Z-score"),4
 result_vecsimi_movie$MAE<-c(mae.NV.NS.DEV, mae.NV.NS.Z, mae.NV.S50.DEV, mae.NV.S50.Z, mae.V.NS.DEV, mae.V.NS.Z, mae.V.S50.DEV, mae.V.S50.Z)
 result_vecsimi_movie$ROC<-c(roc.NV.NS.DEV, roc.NV.NS.Z, roc.NV.S50.DEV, roc.NV.S50.Z, roc.V.NS.DEV, roc.V.NS.Z, roc.V.S50.DEV, roc.V.S50.Z)
 
+print("The results from Vector Simiarity")
 print(result_vecsimi_movie)
 }
 
@@ -189,7 +235,7 @@ result_table$ROC<-c(cal_roc(test_results$p1,test_results$Score),
                     )
 
 result_table$time_pppm<-rep(c(0.065,0.065,0.065,0.066,0.063,0.065,0.065,0.067),each=2)
-
+print("The results from SimRank")
 print(result_table)
 }
 
@@ -197,51 +243,9 @@ if(Pearson)
   {
 #####Show the Evaluation Table by using Pearson Coeffienct
   load("./eachmovie_PearsonCorrErrorOutput.RData")
-  
+  print("The results from Pearson")
   print(eachmovie_errors_final)
 }
 ```
 
-
-##### Load the test results for dataset2-eachmovie
-```{r}
-if(VectorSimilarity)
- {
-load("./data/pred1.web.Rdata")
-load("./data/pred1.web.Rdata")
-load("./data/pred1.web.Rdata")
-load("./data/pred1.web.Rdata")
-load("./data/pred1.web.Rdata")
-load("./data/pred1.web.Rdata")
-load("./data/pred1.web.Rdata")
-load("./data/pred1.web.Rdata")
-rs.1<-RankScore(NV.NS.Dev.web,test_web)
-rs.2<-RankScore(NV.NS.Z.web, test_web)
-rs.3<-RankScore(NV.S50.Dev.web, test_web)
-rs.4<-RankScore(NV.S50.Z.web,test_web)
-rs.5<-RankScore(V.NS.Dev.web,test_web)
-rs.6<-RankScore(V.NS.Z.web, test_web)
-rs.7<-RankScore(V.S50.Dev.web, test_web)
-rs.8<-RankScore(V.S50.Z.web,test_web)
-
-result_vecsimi_web<-matrix(NA,8,3)
-result_vecsimi_web<-as.data.frame(result_vecsimi_web)
-names(result_vecsimi_web)<-c("Algorithm","Normalization","RankedScoring")
-result_vecsimi_web$Algorithm<-as.vector(rep(c("VecSimi-no Var-no Sel","VecSimi-no Var-Sel","VecSimi-Var-no Sel","VecSimi-Var-Sel"),each=2))
-result_vecsimi_web$Normalization<-as.vector(rep(c("dev.from.mean","Z-score"),4))
-result_vecsimi_web$RankedScoring<-c(rs.1,rs.2,rs.3,rs.4,rs.5,rs.6,rs.7,rs.8)
-
-print(result_vecsimi_web)
-}
-
-if(Pearson)
-  {
-#####Show the Evaluation Table by using Pearson Coeffienct
-  
-  load("./msweb_PearsonCorrErrorOutput.RData")
-  
-   print(msweb_errors_final)
-}
-
-```
 
