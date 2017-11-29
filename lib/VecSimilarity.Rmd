@@ -1,0 +1,194 @@
+---
+title: "model-proj4"
+author: "Yi Zhang ; yz3006"
+date: "11/27/2017"
+output: html_document
+---
+
+```{r}
+###########Set the variables T or F to get the combinations
+Vecsimi=TRUE
+VarWeight=FALSE
+SelectN=FALSE
+DevMean=TRUE
+Zscore=TRUE      
+#df<-train_movie
+mean_user<-apply(df, 1, function(x){mean(x[x>0])})
+sd_user<-apply(df,1,function(x){sd(x[x>0])})
+
+
+# library("lsa")
+# ################ Calculate the vector similarity between each users
+# if(VecSimi)
+# {
+#   simi<-cosine(t(df))
+#   save(simi,file = "./data/vectorsimi_movie.Rdata")
+#   }
+# 
+# ################ Incorporate the variance weight
+if(VarWeight)
+  {
+  sd_score<-apply(df, 2, sd)
+  sd_score<-(sd_score-min(sd_score))/max(sd_score)
+  df.var<-df*sd_score
+  simi.var<- cosine(t(df.var))
+  save(simi.var, file="./data/vectorsimi.var_movie.Rdata")
+  simi<-simi.var
+}
+
+
+################ Select n-best neighbors and place them in bestN.neighbors
+if(SelectN)
+ {
+ n=100
+bestN.neighbors<- matrix(NA, nrow = nrow(simi),ncol = n+1,dimnames =list(rownames(simi)))
+
+for (i in 1:nrow(simi))
+  {
+  neighbor_idx<- order(simi[i,], decreasing = TRUE)
+  bestN.neighbors[i,]<- names(simi[i,neighbor_idx[1:(n+1)]])
+}
+
+bestN.neighbors<- bestN.neighbors[,-1]  #contains the best n usernames in every row
+#------------------------------------------------------------------------------
+bestN.simi<- matrix(NA, nrow = nrow(simi),ncol = n,dimnames =list(rownames(simi)))
+for (i in 1:nrow(simi))
+  {
+   bestN.simi[i,]<- as.numeric(simi[i,bestN.neighbors[i,]]) #contains the best n vector similarity in every row
+  }        
+ 
+}
+
+# if(!SelectN)
+#      {
+#    bestN.neighbors<-matrix(rep(colnames(simi),nrow(simi)), nrow=nrow(simi), ncol=ncol(simi),byrow=TRUE)
+#    bestN.simi<-simi
+#     }
+#  
+
+if(!SelectN&DevMean)
+   {
+   dev.scores<-matrix(NA, nrow = nrow(df), ncol = ncol(df), dimnames = list((rownames(df)),(colnames(df))))
+  df.standard<- df-mean_user
+
+  for (i in 1:nrow(dev.scores)) 
+  {
+  
+  dev.scores[i,]<- as.numeric(mean_user[i]) + as.numeric(colSums(df.standard*simi[i,])/sum(simi[i,]))
+    
+  }
+   
+}
+
+if(!SelectN&Zscore)
+   {
+   z.scores<-matrix(NA, nrow = nrow(df), ncol = ncol(df), dimnames = list((rownames(df)),(colnames(df))))
+  df.standard<- (df-mean_user)/sd_user
+   
+  for (i in 1:nrow(z.scores)) 
+  {
+  
+  z.scores[i,]<- as.numeric(mean_user[i]) + as.numeric(colSums(df.standard*simi[i,])/sum(simi[i,])*sd_user[i])
+    
+  }
+   
+}
+####################### Use dev-from-mean to rate normalization
+if(SelectN&DevMean)
+   {
+dev.scores<-matrix(NA, nrow = nrow(df), ncol = ncol(df), dimnames = list((rownames(df)),(colnames(df))))
+
+for (i in 1:nrow(dev.scores)) 
+  {
+  
+  user_neighbor_score<-df[bestN.neighbors[i,],]
+  user_neighbor.score<-user_neighbor_score - mean_user[bestN.neighbors[i,]]
+  nume<-user_neighbor.score*bestN.simi[i,]
+  dev.scores[i,]<- as.numeric(mean_user[i]) + as.numeric(colSums(nume)/sum(bestN.simi[i,]))
+}
+  #pred.score<-dev.scores
+  
+ }
+ 
+################# Use Z-score to predict the scores
+# z.scores<-matrix(NA, nrow = 7, ncol = 10, dimnames = list((rownames(train_movie)[1:7]),(colnames(train_movie)[1:10])))
+
+if(Zscore&SelectN)
+  {
+
+z.scores<-matrix(NA, nrow = nrow(df), ncol = ncol(df), dimnames = list((rownames(df)),(colnames(df))))
+for (i in 1:nrow(z.scores)) {
+
+  user_neighbor.score<- (df[bestN.neighbors[i,],] -    mean_user[bestN.neighbors[i,]])/sd_user[bestN.neighbors[i,]]
+  
+  nume<-user_neighbor.score*bestN.simi[i,]
+  z.scores[i,]<- as.numeric(mean_user[i]) + as.numeric(colSums(nume)/sum(bestN.simi[i,]))
+
+}
+
+pred.Zscore<-z.scores
+}
+
+########## Calculate MAE&ROC
+# MAE<- sum(apply(abs(pred.score-df),1,sum)) / (nrow(df)*ncol(df))
+#pred.new<-pred.score[,names(test_movie)]
+#dim(pred.new)
+mae<-function(testdata,predscore){
+  pred.score<-predscore[,names(testdata)]
+  MAE<-mean(abs(as.vector(pred.score)-as.vector(unlist(testdata))))
+  return(MAE)
+}
+#----------------------------------------------------------------
+#install.packages("pROC")
+roc_4<-function(testdata,predscore) {
+library("pROC" )
+pred.score<-predscore[,names(testdata)]
+pred<-ifelse(round(pred.score)>=4,1,0 )
+test<-ifelse(testdata>=4,1,0)
+roc_4 <-roc(as.vector(pred),as.vector(test))
+area<-auc(roc_4 )
+return(area)
+}
+```
+
+
+
+```{r}
+#########################evaluate dataset2
+df<-train_movie
+save(NV.NS.Dev.Score,file = "./data/pred1.Rdata")
+save(NV.NS.Z.Score,file = "./data/pred2.Rdata")
+save(NV.S100.Dev.Score,file = "./data/pred3.Rdata")
+save(NV.S100.Z.Score,file = "./data/pred4.Rdata")
+save(V.NS.Dev.Score,file = "./data/pred5.Rdata")
+
+
+mae.NV.NS.DEV<-mae(test_movie,NV.NS.Dev.Score)
+roc.NV.NS.DEV<-roc_4(test_movie,NV.NS.Dev.Score)
+mae.NV.NS.Z<-mae(test_movie,NV.NS.Z.Score)
+roc.NV.NS.Z<-roc_4(test_movie,NV.NS.Z.Score)
+mae.NV.S100.DEV<-mae(test_movie,NV.S100.Dev.Score)
+roc.NV.S100.DEV<-roc_4(test_movie,NV.S100.Dev.Score)
+mae.NV.S100.Z<-mae(test_movie,NV.S100.Z.Score)
+roc.NV.S100.Z<-roc_4(test_movie,NV.S100.Z.Score)
+mae.V.NS.DEV<-mae(test_movie,V.NS.Dev.Score)
+roc.V.NS.DEV<-roc_4(test_movie,V.NS.Dev.Score)
+
+mae.V.NS.Z<-mae(test_movie,V.NS.Z.Score)
+roc.V.NS.Z<-roc_4(test_movie,V.NS.Z.Score)
+mae.V.S100.DEV<-mae(test_movie,V.S100.Dev.Score)
+roc.V.S100.DEV<-roc_4(test_movie,V.S100.Dev.Score)
+mae.V.S100.Z<-mae(test_movie,V.S100.Z.Score)
+roc.V.S100.Z<-roc_4(test_movie,V.S100.Z.Score)
+
+
+result_vecsimi_movie<-matrix(NA,8,4)
+result_vecsimi_movie<-as.data.frame(result_vecsimi)
+names(result_vecsimi_movie)<-c("Algorithm","Normalization","MAE","ROC")
+result_vecsimi_movie$Algorithm<-as.vector(rep(c("VecSimi-no Var-no Sel","VecSimi-no Var-Sel","VecSimi-Var-no Sel","VecSimi-Var-Sel"),each=2))
+result_vecsimi_movie$Normalization<-as.vector(rep(c("dev.from.mean","Z-score"),4))
+result_vecsimi_movie$MAE<-c(mae.NV.NS.DEV, mae.NV.NS.Z, mae.NV.S100.DEV, mae.NV.S100.Z, mae.V.NS.DEV, mae.V.NS.Z, mae.V.S100.DEV, mae.V.S100.Z)
+result_vecsimi_movie$ROC<-c(roc.NV.NS.DEV, roc.NV.NS.Z,roc, roc.NV.S100.DEV, roc.NV.S100.Z, roc.V.NS.DEV, roc.V.NS.Z, roc.V.S100.DEV, roc.V.S100.Z)
+
+```
+
