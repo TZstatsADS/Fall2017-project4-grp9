@@ -130,14 +130,14 @@ setwd("~/Desktop/[ADS]Advanced Data Science/fall2017-project4-group9/")
 if(VectorSimilarity)
 {
 test_movie<-read.csv("./output/test_movie.csv",check.names=FALSE,row.names=1)
-load("./output/pred1.Rdata")
-load("./output/pred2.Rdata")
-load("./output/pred3.Rdata")
-load("./output/pred4.Rdata")
-load("./output/pred5.Rdata")
-load("./output/pred6.Rdata")
-load("./output/pred7.Rdata")
-load("./output/pred8.Rdata")
+load("./output/pred_movie/pred1.Rdata")
+load("./output/pred_movie/pred2.Rdata")
+load("./output/pred_movie/pred3.Rdata")
+load("./output/pred_movie/pred4.Rdata")
+load("./output/pred_movie/pred5.Rdata")
+load("./output/pred_movie/pred6.Rdata")
+load("./output/pred_movie/pred7.Rdata")
+load("./output/pred_movie/pred8.Rdata")
 
 mae.NV.NS.DEV<-mae(test_movie,NV.NS.Dev.Score)
 roc.NV.NS.DEV<-as.numeric(roc_4(test_movie,NV.NS.Dev.Score))
@@ -249,3 +249,48 @@ if(Pearson)
 ```
 
 
+<<<<<<< HEAD
+=======
+##### Load the test results for dataset2-eachmovie
+```{r}
+if(VectorSimilarity)
+ {
+load("./output/pred_web/pred1.web.Rdata")
+load("./output/pred_web/pred2.web.Rdata")
+load("./output/pred_web/pred3.web.Rdata")
+load("./output/pred_web/pred4.web.Rdata")
+load("./output/pred_web/pred5.web.Rdata")
+load("./output/pred_web/pred6.web.Rdata")
+load("./output/pred_web/pred7.web.Rdata")
+load("./output/pred_web/pred8.web.Rdata")
+rs.1<-RankScore(NV.NS.Dev.web,test_web)
+rs.2<-RankScore(NV.NS.Z.web, test_web)
+rs.3<-RankScore(NV.S50.Dev.web, test_web)
+rs.4<-RankScore(NV.S50.Z.web,test_web)
+rs.5<-RankScore(V.NS.Dev.web,test_web)
+rs.6<-RankScore(V.NS.Z.web, test_web)
+rs.7<-RankScore(V.S50.Dev.web, test_web)
+rs.8<-RankScore(V.S50.Z.web,test_web)
+
+result_vecsimi_web<-matrix(NA,8,3)
+result_vecsimi_web<-as.data.frame(result_vecsimi_web)
+names(result_vecsimi_web)<-c("Algorithm","Normalization","RankedScoring")
+result_vecsimi_web$Algorithm<-as.vector(rep(c("VecSimi-no Var-no Sel","VecSimi-no Var-Sel","VecSimi-Var-no Sel","VecSimi-Var-Sel"),each=2))
+result_vecsimi_web$Normalization<-as.vector(rep(c("dev.from.mean","Z-score"),4))
+result_vecsimi_web$RankedScoring<-c(rs.1,rs.2,rs.3,rs.4,rs.5,rs.6,rs.7,rs.8)
+
+print(result_vecsimi_web)
+}
+
+if(Pearson)
+  {
+#####Show the Evaluation Table by using Pearson Coeffienct
+  
+  load("./msweb_PearsonCorrErrorOutput.RData")
+  
+   print(msweb_errors_final)
+}
+
+```
+
+>>>>>>> 2eb7edffb5bb84e98a1867db766650db9e5711e1
