@@ -1,0 +1,275 @@
+---
+title: "model-proj4"
+author: "Yi Zhang ; yz3006"
+date: "11/27/2017"
+output: html_document
+---
+
+```{r}
+###########Set the variables T or F to get the combinations
+Vecsimi=TRUE
+VarWeight=FALSE
+SelectN=FALSE
+DevMean=TRUE
+Zscore=TRUE 
+if(df==train_movie)
+{df<-train_movie
+mean_user<-apply(df, 1, function(x){mean(x[x>0])})
+sd_user<-apply(df,1,function(x){sd(x[x>0])})  
+}
+
+if(df==train_web) 
+  {
+df<-train_web
+mean_user<-apply(df, 1, mean)
+sd_user<-apply(df,1,sd)
+}
+
+library("lsa")
+################ Calculate the vector similarity between each users
+if(VecSimi)
+{
+  simi.web<-cosine(t(train_web))
+  save(simi.web,file = "./data/vectorsimi_web.Rdata")
+  #simi<-cosine(t(df))
+  save(simi,file = "./data/vectorsimi_movie.Rdata")
+  }
+
+################ Incorporate the variance weight
+if(VarWeight)
+  {
+  #sd_score<-apply(df, 2, sd)
+  #sd_score<-(sd_score-min(sd_score))/max(sd_score)
+  var<-apply(df,2,var)
+  sd_score<-sqrt((var-min(var))/max(var))
+  df.var<-df*sd_score
+  simi.var<- cosine(t(df.var))
+  save(simi.var, file="./data/vectorsimi.var_movie.Rdata")
+  save(simi.var, file="./data/vectorsimi.var_web.Rdata")
+  simi<-simi.var
+}
+#######################Writea function to combine together#######################
+labelpred_vecsimi<-function(SelectN=FALSE,DevMean=TRUE,Zscore=TRUE) {
+
+  ################ Select n-best neighbors and place them in bestN.neighbors
+if(SelectN)
+ {
+   n=50
+   bestN.neighbors<- matrix(NA, nrow = nrow(simi),ncol = n+1,dimnames =list(rownames(simi)))
+for (i in 1:nrow(simi))
+  {
+  neighbor_idx<- order(simi[i,], decreasing = TRUE)
+  bestN.neighbors[i,]<- names(simi[i,neighbor_idx[1:(n+1)]])
+}
+bestN.neighbors<- bestN.neighbors[,-1]  #contains best n usernames in every row
+
+bestN.simi<- matrix(NA, nrow = nrow(simi),ncol = n,dimnames =list(rownames(simi)))
+for (i in 1:nrow(simi))
+  {
+   bestN.simi[i,]<- as.numeric(simi[i,bestN.neighbors[i,]]) 
+   #contains the best n vector similarity in every row
+ }    
+
+
+}
+###########SelectN=FALSE&DevMean=TRUE###############
+if(!SelectN&DevMean)
+   {
+   dev.scores<-matrix(NA, nrow = nrow(df), ncol = ncol(df), dimnames = list((rownames(df)),(colnames(df))))
+    df.standard<- df-mean_user
+###get rid of the values which means no score in df
+  
+     #df.standard<-as.matrix(df.standard)   #pls comment the code when use web data
+     #df.standard[which(df==0)]<-0          #pls comment the code when use web data
+    
+###predict the scores 
+    for (i in 1:nrow(dev.scores)) 
+  {
+  dev.scores[i,]<- as.numeric(mean_user[i]) + as.numeric(colSums(df.standard*simi[i,])/sum(simi[i,]))
+  }
+   
+}
+###########SelectN=FALSE&Zscore=TRUE################
+if(!SelectN&Zscore)
+   {
+   z.scores<-matrix(NA, nrow = nrow(df), ncol = ncol(df), dimnames = list((rownames(df)),(colnames(df))))
+  df.standard<- (df-mean_user)/sd_user  
+  df.standard<-as.matrix(df.standard)  ####pls comment the code when use web data
+   df.standard[which(df==0)]<-0  #####pls comment the code when use web data
+    
+#########predict the scores 
+  for (i in 1:nrow(z.scores)) 
+  {
+  z.scores[i,]<- as.numeric(mean_user[i]) +  as.numeric(colSums(df.standard*simi[i,])/sum(simi[i,])*sd_user[i])
+  }
+}
+###########SelectN=TRUE&DevMean=TRUE################
+if(SelectN&DevMean)
+   {
+dev.scores<-matrix(NA, nrow = nrow(df), ncol = ncol(df), dimnames = list((rownames(df)),(colnames(df))))
+for (i in 1:nrow(dev.scores)) 
+  {
+  neighbor_score<- df[bestN.neighbors[i,],]
+  neighbor.score<- neighbor_score - mean_user[bestN.neighbors[i,]]
+  #neighbor.score<-as.matrix(neighbor.score)
+  #neighbor.score[which(neighbor_score==0)]<-0
+  nume<-neighbor.score*bestN.simi[i,] 
+  dev.scores[i,]<- as.numeric(mean_user[i]) + as.numeric(colSums(nume)/sum(bestN.simi[i,]))
+     }
+ }
+ 
+###########SelectN=TRUE&Zscore=TRUE#################
+if(SelectN&Zscore)
+  {
+ z.scores<-matrix(NA, nrow = nrow(df), ncol = ncol(df), dimnames = list((rownames(df)),(colnames(df))))
+ for (i in 1:nrow(z.scores)) {
+  neighbor_score<-df[bestN.neighbors[i,],]
+  neighbor.score<- (df[bestN.neighbors[i,],] -    mean_user[bestN.neighbors[i,]])/sd_user[bestN.neighbors[i,]]
+  neighbor.score<-as.matrix(neighbor.score)
+  neighbor.score[which(neighbor_score==0)]<-0
+  nume<-neighbor.score*bestN.simi[i,]
+  z.scores[i,]<- as.numeric(mean_user[i]) + as.numeric(colSums(nume)/sum(bestN.simi[i,])*sd_user[i])
+         }
+  }
+  
+  return(list(devscore=dev.scores,zscore=z.scores))
+}
+
+```
+
+
+```{r}
+################ Calculate MAE&ROC&Ranked Scoring##################################
+mae<-function(testdata,predscore){
+predscore<-predscore[,names(testdata)]
+test<-as.vector(unlist(testdata))
+pred<-as.vector(predscore)
+pred[which(test==0)]<-0
+MAE<-sum(abs(pred-test))/sum(test!=0)
+return(MAE)
+}
+##########---------------------------######################
+#install.packages("pROC")
+roc_4<-function(testdata,predscore) {
+library("pROC" )
+predscore<-predscore[,names(testdata)]
+predscore[which(testdata==0)]<-0
+pred<-ifelse(round(predscore)>=4,1,0 )
+test<-ifelse(testdata>=4,1,0)
+roc_4 <-roc(as.vector(pred),as.vector(test))
+area<-auc(roc_4 )
+return(area)
+}
+###########Ranked Scoring################
+RankScore<-function(scorepred,testdata){
+pred.scores<-scorepred[rownames(testdata),colnames(testdata)]
+pred.scores[which(testdata==0)]<-0
+Rankk<-vector(length = nrow(pred.scores))
+for (i in 1:length(Rankk)) {
+    score_i<-pred.scores[i,]
+    id_dec<-order(score_i,decreasing = T)
+    score_dec<-score_i[id_dec]
+    score_dec[which(as.numeric(score_dec)<0)]<-0
+    j<-1:ncol(df)
+    Rankk[i]<-sum(score_dec/(2^((j-1)/4)))
+}
+#sum(Rankk)
+RankMax<-vector(length = nrow(testdata))
+for (i in 1:length(RankMax)) {
+    score_i<-testdata[i,]
+    id_dec<-order(score_i,decreasing = T)
+    score_dec<-score_i[id_dec]
+    score_dec[which(as.numeric(score_dec)<0)]<-0
+    j<-1:ncol(testdata)
+    RankMax[i]<-sum(as.numeric(score_dec/2^((j-1)/4)))
+}
+#sum(RankMax)
+return(100*sum(Rankk)/sum(RankMax))
+}
+```
+
+
+
+```{r}
+#########################evaluate dataset2
+df<-train_movie
+save(NV.NS.Dev.Score,file = "./data/pred1.Rdata")
+save(NV.NS.Z.Score,file = "./data/pred2.Rdata")
+save(NV.S50.Dev.Score,file = "./data/pred3.Rdata")
+save(NV.S50.Z.Score,file = "./data/pred4.Rdata")
+save(V.NS.Dev.Score,file = "./data/pred5.Rdata")
+save(V.NS.Z.Score, file="./data/pred6.Rdata")
+save(V.S50.Dev.Score,file = "./data/pred7.Rdata")
+save(V.S50.Z.Score,file = "./data/pred8.Rdata")
+
+
+mae.NV.NS.DEV<-mae(test_movie,NV.NS.Dev.Score)
+roc.NV.NS.DEV<-as.numeric(roc_4(test_movie,NV.NS.Dev.Score))
+mae.NV.NS.Z<-mae(test_movie,NV.NS.Z.Score)
+roc.NV.NS.Z<-as.numeric(roc_4(test_movie,NV.NS.Z.Score))
+mae.NV.S50.DEV<-mae(test_movie,NV.S50.Dev.Score)
+roc.NV.S50.DEV<-as.numeric(roc_4(test_movie,NV.S50.Dev.Score))
+mae.NV.S50.Z<-mae(test_movie,NV.S50.Z.Score )
+roc.NV.S50.Z<-as.numeric(roc_4(test_movie,NV.S50.Z.Score ))
+mae.V.NS.DEV<-mae(test_movie,V.NS.Dev.Score)
+roc.V.NS.DEV<-as.numeric(roc_4(test_movie,V.NS.Dev.Score))
+mae.V.NS.Z<-mae(test_movie,V.NS.Z.Score)
+roc.V.NS.Z<-as.numeric(roc_4(test_movie,V.NS.Z.Score))
+mae.V.S50.DEV<-mae(test_movie,V.S50.Dev.Score)
+roc.V.S50.DEV<-as.numeric(roc_4(test_movie,V.S50.Dev.Score))
+mae.V.S50.Z<-mae(test_movie,V.S50.Z.Score)
+roc.V.S50.Z<-as.numeric(roc_4(test_movie,V.S50.Z.Score))
+
+result_vecsimi_movie<-matrix(NA,8,4)
+result_vecsimi_movie<-as.data.frame(result_vecsimi)
+names(result_vecsimi_movie)<-c("Algorithm","Normalization","MAE","ROC")
+result_vecsimi_movie$Algorithm<-as.vector(rep(c("VecSimi-no Var-no Sel","VecSimi-no Var-Sel","VecSimi-Var-no Sel","VecSimi-Var-Sel"),each=2))
+result_vecsimi_movie$Normalization<-as.vector(rep(c("dev.from.mean","Z-score"),4))
+result_vecsimi_movie$MAE<-c(mae.NV.NS.DEV, mae.NV.NS.Z, mae.NV.S50.DEV, mae.NV.S50.Z, mae.V.NS.DEV, mae.V.NS.Z, mae.V.S50.DEV, mae.V.S50.Z)
+result_vecsimi_movie$ROC<-c(roc.NV.NS.DEV, roc.NV.NS.Z, roc.NV.S50.DEV, roc.NV.S50.Z, roc.V.NS.DEV, roc.V.NS.Z, roc.V.S50.DEV, roc.V.S50.Z)
+
+save(result_vecsimi_movie,file = "./data/result_movie.Rdata")
+```
+
+
+```{r}
+##############################evaluate dataset1
+# id_train<-seq(1,ncol(train_web))
+# trainName<-names(train_web)
+# testName<-names(test_web)
+# id_test<-vector(length = ncol(test_web))
+# for (i in 1:ncol(test_web)) {
+#   id_test[i]<-c(which(trainName==testName[i]))
+# }
+# names(train_web)<-as.character(id_train)
+# names(test_web)<-as.character(id_test)
+
+df<-train_web
+save(NV.NS.Dev.web, file = "./data/pred1.web.Rdata")
+save(NV.NS.Z.web, file = "./data/pred2.web.Rdata")
+save(NV.S50.Dev.web, file = "./data/pred3.web.Rdata")
+save(NV.S50.Z.web, file = "./data/pred4.web.Rdata")
+save(V.NS.Dev.web, file = "./data/pred5.web.Rdata")
+save(V.NS.Z.web, file = "./data/pred2.web.Rdata")
+save(V.S50.Dev.web, file = "./data/pred3.web.Rdata")
+save(V.S50.Z.web, file = "./data/pred4.web.Rdata")
+
+rs.1<-RankScore(NV.NS.Dev.web,test_web)
+rs.2<-RankScore(NV.NS.Z.web, test_web)
+rs.3<-RankScore(NV.S50.Dev.web, test_web)
+rs.4<-RankScore(NV.S50.Z.web,test_web)
+rs.5<-RankScore(V.NS.Dev.web,test_web)
+rs.6<-RankScore(V.NS.Z.web, test_web)
+rs.7<-RankScore(V.S50.Dev.web, test_web)
+rs.8<-RankScore(V.S50.Z.web,test_web)
+
+result_vecsimi_web<-matrix(NA,8,3)
+result_vecsimi_web<-as.data.frame(result_vecsimi_web)
+names(result_vecsimi_web)<-c("Algorithm","Normalization","RankedScoring")
+result_vecsimi_web$Algorithm<-as.vector(rep(c("VecSimi-no Var-no Sel","VecSimi-no Var-Sel","VecSimi-Var-no Sel","VecSimi-Var-Sel"),each=2))
+result_vecsimi_web$Normalization<-as.vector(rep(c("dev.from.mean","Z-score"),4))
+result_vecsimi_web$RankedScoring<-c(rs.1,rs.2,rs.3,rs.4,rs.5,rs.6,rs.7,rs.8)
+save(result_vecsimi_web,file = "./data/result_web.Rdata")
+```
+
+
