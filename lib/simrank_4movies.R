@@ -311,7 +311,9 @@ for(i in 1:nrow(movies_test)){
   movies_test_50nei[i,c("p3","p3_zscore","p4","p4_zscore")]<-predicton(as.character(x$User),as.character(x$Movie),select.neighbor = 50)
 }
 
-#test_results<-movies_test
+#test_results_200nei<-movies_test_200nei
+#test_results_50nei<-movies_test_50nei
+#save(test_results_50nei,file="~/Desktop/test_results_ROC4_50nei.RData")
 #save(test_results,file="~/Desktop/test_results_ROC4_100nei.RData")
 
 ## MAE
@@ -320,16 +322,16 @@ cal_mae<-function(pred,score){
 }
 
 cal_mae(movies_test$p1,movies_test$Score)
-cal_mae(movies_test$p1_zscore,movies_test$Score)
+cal_mae(movies_test_50nei$p1_zscore,movies_test$Score)
 
-cal_mae(movies_test$p2,movies_test$Score)
+cal_mae(movies_test_50nei$p2,movies_test$Score)
 cal_mae(movies_test$p2_zscore,movies_test$Score)
 
-cal_mae(movies_test$p3,movies_test$Score)
-cal_mae(movies_test$p3_zscore,movies_test$Score)
+cal_mae(movies_test_50nei$p3,movies_test$Score)
+cal_mae(movies_test_50nei$p3_zscore,movies_test$Score)
 
-cal_mae(movies_test$p4,movies_test$Score)
-cal_mae(movies_test$p4_zscore,movies_test$Score)
+cal_mae(movies_test_50nei$p4,movies_test$Score)
+cal_mae(movies_test_50nei$p4_zscore,movies_test$Score)
 ## ROC
 library(pROC)
 cal_roc<-function(pred,score){
@@ -351,12 +353,22 @@ cal_roc(movies_test$p3_zscore,movies_test$Score)
 cal_roc(movies_test$p4,movies_test$Score)
 cal_roc(movies_test$p4_zscore,movies_test$Score)
 
-result_table<-matrix(NA,8,4)
+result_table<-matrix(NA,16,4)
 result_table<-as.data.frame(result_table)
 colnames(result_table)<-c("algorithm","Normalization","MEA","ROC")
-result_table$algorithm<-c("SimRank","SimRank","SimRank+Var.Weight","SimRank+Var.Weight","SimRank+Sel.Nei","SimRank+Sel.Nei","SimRank+Var.Weight+Sel.Nei","SimRank+Var.Weight+Sel.Nei")
+result_table$algorithm<-c("SimRank","SimRank",
+                          "SimRank+Var.Weight","SimRank+Var.Weight",
+                          "SimRank+Sel.Nei100","SimRank+Sel.Nei100",
+                          "SimRank+Var.Weight+Sel.Nei100","SimRank+Var.Weight+Sel.Nei100",
+                          
+                          "SimRank+Sel.Nei50","SimRank+Sel.Nei50",
+                          "SimRank+Var.Weight+Sel.Nei50","SimRank+Var.Weight+Sel.Nei50",
+                          
+                          "SimRank+Sel.Nei200","SimRank+Sel.Nei200",
+                          "SimRank+Var.Weight+Sel.Nei200","SimRank+Var.Weight+Sel.Nei200"
+                          )
 View(result_table)
-result_table$Normalization<-rep(c("dev.from.mean","z-score"),4)
+result_table$Normalization<-rep(c("dev.from.mean","z-score"),8)
 
 result_table$MEA<-c(cal_mae(movies_test$p1,movies_test$Score),
                     cal_mae(movies_test$p1_zscore,movies_test$Score),
@@ -365,7 +377,20 @@ result_table$MEA<-c(cal_mae(movies_test$p1,movies_test$Score),
                     cal_mae(movies_test$p3,movies_test$Score),
                     cal_mae(movies_test$p3_zscore,movies_test$Score),
                     cal_mae(movies_test$p4,movies_test$Score),
-                    cal_mae(movies_test$p4_zscore,movies_test$Score))
+                    cal_mae(movies_test$p4_zscore,movies_test$Score),
+                    
+                    cal_mae(movies_test_50nei$p3,movies_test$Score),
+                    cal_mae(movies_test_50nei$p3_zscore,movies_test$Score),
+                    cal_mae(movies_test_50nei$p4,movies_test$Score),
+                    cal_mae(movies_test_50nei$p4_zscore,movies_test$Score),
+                    
+                    cal_mae(movies_test_200nei$p3,movies_test$Score),
+                    cal_mae(movies_test_200nei$p3_zscore,movies_test$Score),
+                    cal_mae(movies_test_200nei$p4,movies_test$Score),
+                    cal_mae(movies_test_200nei$p4_zscore,movies_test$Score)
+                    
+                    
+                    )
 
 
 result_table$ROC<-c(cal_roc(movies_test$p1,movies_test$Score),
@@ -375,9 +400,20 @@ result_table$ROC<-c(cal_roc(movies_test$p1,movies_test$Score),
                     cal_roc(movies_test$p3,movies_test$Score),
                     cal_roc(movies_test$p3_zscore,movies_test$Score),
                     cal_roc(movies_test$p4,movies_test$Score),
-                    cal_roc(movies_test$p4_zscore,movies_test$Score))
+                    cal_roc(movies_test$p4_zscore,movies_test$Score),
+                    
+                    cal_roc(movies_test_50nei$p3,movies_test$Score),
+                    cal_roc(movies_test_50nei$p3_zscore,movies_test$Score),
+                    cal_roc(movies_test_50nei$p4,movies_test$Score),
+                    cal_roc(movies_test_50nei$p4_zscore,movies_test$Score),
+                    
+                    cal_roc(movies_test_200nei$p3,movies_test$Score),
+                    cal_roc(movies_test_200nei$p3_zscore,movies_test$Score),
+                    cal_roc(movies_test_200nei$p4,movies_test$Score),
+                    cal_roc(movies_test_200nei$p4_zscore,movies_test$Score)
+                    )
 
-save(result_table,test_results,file="~/Desktop/test_results_ROC4_100nei.RData")
+save(result_table,test_results,file="~/Desktop/test_results_ROC4.RData")
 
 
 
