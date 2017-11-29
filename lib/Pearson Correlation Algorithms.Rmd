@@ -1,0 +1,330 @@
+---
+title: "proj5"
+author: "Enrique Olivo eco2121"
+date: "November 13, 2017"
+output: html_document
+---
+
+
+
+```{r}
+
+###########################################################
+#ALGORITHM TESTING - SPEARMAN CORRELATION on "EACHMOVIE""
+##########################################################
+setwd("C:/Users/enriquethemoist/Dropbox/Columbia Work/4A - one/Applied Data Science/Project 4")
+install.packages("recommenderlab")
+library(recommenderlab)
+
+#############################
+#EACHMOVIE_ERROR1
+##############################
+#Significance Weighting: No
+#Variance Weighting: No
+#Selecting Neighbours: Best-n-estimator
+#Normalization: Z-Score
+
+train_movie <- read.csv("train_movie")
+
+eachmovie <- train_movie 
+#Convert dataframe to "RealRatingMatrix"
+eachmovie <- as.matrix(eachmovie)
+eachmovie <- as(eachmovie, "realRatingMatrix")
+
+#create "evaluation scheme" object for the Recommender() function 
+#splitting 90% of data for training and 10% for validation
+eachmovie_es <- evaluationScheme(eachmovie, method="split", train=0.9, given=15)
+
+# creation of recommender model based on user-based collaborative filtering (ubcf)
+eachmovie_rec <- Recommender(
+  getData(eachmovie_es, "train"), 
+  method="UBCF", 
+  parameter=list(normalize="Z-score", method="Pearson")
+  )
+
+# making predictions on the test data set
+eachmovie_rec_pred <- predict(eachmovie_rec, getData(eachmovie_es, "known"), type="ratings")
+# obtaining the error metrics for both approaches and comparing them
+eachmovie_rec_error <-calcPredictionAccuracy(eachmovie_rec_pred, getData(eachmovie_es, "unknown"))
+
+eachmovie_error1 <- as(eachmovie_rec_error, "list")
+
+
+#############################
+#EACHMOVIE_ERROR2
+##############################
+#Significance Weighting: No
+#Variance Weighting: No
+#Selecting Neighbours: Best-n-estimator
+#Normalization: Deviation From Mean
+
+eachmovie_es2 <- evaluationScheme(eachmovie, method="split", train=0.9, given=15)
+
+# creation of recommender model based on user-based collaborative filtering (ubcf)
+eachmovie_rec2 <- Recommender(
+  getData(eachmovie_es, "train"), 
+  method="UBCF", 
+  parameter=list(normalize="center", method="Pearson")
+  )
+
+# making predictions on the test data set
+eachmovie_rec_pred2 <- predict(eachmovie_rec2, getData(eachmovie_es2, "known"), type="ratings")
+# obtaining the error metrics for both approaches and comparing them
+eachmovie_rec_error2 <-calcPredictionAccuracy(eachmovie_rec_pred2, getData(eachmovie_es2, "unknown"))
+
+eachmovie_error2 <- as(eachmovie_rec_error, "list")
+
+
+#############################
+#EACHMOVIE_ERROR3
+##############################
+#Significance Weighting: No
+#Variance Weighting: Yes, with weighting on 100 nearest neighbours
+#Selecting Neighbours: Best-n-estimator
+#Normalization: Z-Score
+
+eachmovie_es3 <- evaluationScheme(eachmovie, method="split", train=0.9, given=15)
+
+# creation of recommender model based on user-based collaborative filtering (ubcf)
+eachmovie_rec3 <- Recommender(
+  getData(eachmovie_es3, "train"), 
+  method="UBCF", 
+  parameter=list(normalize="Z-score", method="Pearson", nn=100)
+  )
+
+# making predictions on the test data set
+eachmovie_rec_pred3 <- predict(eachmovie_rec3, getData(eachmovie_es3, "known"), type="ratings")
+# obtaining the error metrics for both approaches and comparing them
+eachmovie_rec_error3 <-calcPredictionAccuracy(eachmovie_rec_pred3, getData(eachmovie_es3, "unknown"))
+
+eachmovie_error3 <- as(eachmovie_rec_error, "list")
+
+#############################
+#EACHMOVIE_ERROR4
+##############################
+#Significance Weighting: No
+#Variance Weighting: Yes, with weighting on 100 nearest neighbours
+#Selecting Neighbours: Best-n-estimator
+#Normalization: Deviation From Mean
+
+eachmovie_es4 <- evaluationScheme(eachmovie, method="split", train=0.9, given=15)
+
+# creation of recommender model based on user-based collaborative filtering (ubcf)
+eachmovie_rec4 <- Recommender(
+  getData(eachmovie_es4, "train"), 
+  method="UBCF", 
+  parameter=list(normalize="center", method="Pearson", nn=100)
+  )
+
+# making predictions on the test data set
+eachmovie_rec_pred4 <- predict(eachmovie_rec4, getData(eachmovie_es4, "known"), type="ratings")
+# obtaining the error metrics for both approaches and comparing them
+eachmovie_rec_error4 <-calcPredictionAccuracy(eachmovie_rec_pred4, getData(eachmovie_es4, "unknown"))
+
+eachmovie_error4 <- as(eachmovie_rec_error, "list")
+```
+
+
+
+```{r}
+
+#############################
+#MSWEB_ERROR1
+##############################
+#Significance Weighting: No
+#Variance Weighting: No
+#Selecting Neighbours: Best-n-estimator
+#Normalization: Z-Score
+
+setwd("C:/Users/enriquethemoist/Dropbox/Columbia Work/4A - one/Applied Data Science/Project 4")
+
+train_MS <- read.csv("train_MS")
+
+msweb <- train_MS
+
+#Convert dataframe to "RealRatingMatrix"
+msweb <- as.matrix(msweb)
+msweb <- as(msweb, "realRatingMatrix")
+
+
+#create "evaluation scheme" object for the Recommender() function 
+#splitting 90% of data for training and 10% for validation
+msweb_es <- evaluationScheme(msweb, method="split", train=0.9, given=15)
+
+# creation of recommender model based on user-based collaborative filtering (ubcf)
+msweb_rec <- Recommender(
+  getData(msweb_es, "train"), 
+  method="UBCF", 
+  parameter=list(normalize="Z-score", method="Pearson")
+  )
+
+# making predictions on the test data set
+msweb_rec_pred <- predict(msweb_rec, getData(msweb_es, "known"), type="ratings")
+# obtaining the error metrics for both approaches and comparing them
+msweb_rec_error <-calcPredictionAccuracy(msweb_rec_pred, getData(msweb_es, "unknown"))
+
+msweb_error1 <- as(msweb_rec_error, "list")
+
+
+#############################
+#MSWEB_ERROR2
+##############################
+#Significance Weighting: No
+#Variance Weighting: No
+#Selecting Neighbours: Best-n-estimator
+#Normalization: Deviation From Mean
+
+#create "evaluation scheme" object for the Recommender() function 
+#splitting 90% of data for training and 10% for validation
+msweb_es2 <- evaluationScheme(msweb, method="split", train=0.9, given=15)
+
+# creation of recommender model based on user-based collaborative filtering (ubcf)
+msweb_rec2 <- Recommender(
+  getData(msweb_es2, "train"), 
+  method="UBCF", 
+  parameter=list(normalize="center", method="Pearson")
+  )
+
+# making predictions on the test data set
+msweb_rec_pred2 <- predict(msweb_rec2, getData(msweb_es2, "known"), type="ratings")
+# obtaining the error metrics for both approaches and comparing them
+msweb_rec_error2 <-calcPredictionAccuracy(msweb_rec_pred2, getData(msweb_es2, "unknown"))
+
+msweb_error2 <- as(msweb_rec_error2, "list")
+
+
+
+#############################
+#MSWEB_ERROR3
+##############################
+#Significance Weighting: No
+#Variance Weighting: Yes, with weighting on 100 nearest neighbours
+#Selecting Neighbours: Best-n-estimator
+#Normalization: Z-Score
+
+msweb_es3 <- evaluationScheme(msweb, method="split", train=0.9, given=15)
+
+# creation of recommender model based on user-based collaborative filtering (ubcf)
+msweb_rec3 <- Recommender(
+  getData(msweb_es3, "train"), 
+  method="UBCF", 
+  parameter=list(normalize="Z-score", method="Pearson", nn=100)
+  )
+
+# making predictions on the test data set
+msweb_rec_pred3 <- predict(msweb_rec3, getData(msweb_es3, "known"), type="ratings")
+# obtaining the error metrics for both approaches and comparing them
+msweb_rec_error3 <-calcPredictionAccuracy(msweb_rec_pred3, getData(msweb_es3, "unknown"))
+
+msweb_error3 <- as(msweb_rec_error3, "list")
+
+#############################
+#MSWEB_ERROR4
+##############################
+#Significance Weighting: No
+#Variance Weighting: Yes, with weighting on 100 nearest neighbours
+#Selecting Neighbours: Best-n-estimator
+#Normalization: Deviation from mean
+
+msweb_es4 <- evaluationScheme(msweb, method="split", train=0.9, given=15)
+
+# creation of recommender model based on user-based collaborative filtering (ubcf)
+msweb_rec4 <- Recommender(
+  getData(msweb_es4, "train"), 
+  method="UBCF", 
+  parameter=list(normalize="center", method="Pearson", nn=100)
+  )
+
+# making predictions on the test data set
+msweb_rec_pred4 <- predict(msweb_rec4, getData(msweb_es4, "known"), type="ratings")
+# obtaining the error metrics for both approaches and comparing them
+msweb_rec_error4 <-calcPredictionAccuracy(msweb_rec_pred4, getData(msweb_es4, "unknown"))
+
+msweb_error4 <- as(msweb_rec_error4, "list")
+
+```
+
+
+```{r}
+
+############
+#ORGANIZE FINDINGS
+############
+
+#EACHMOVIE
+eachmovie_pred1 <- as.data.frame(as(eachmovie_rec_pred,"matrix"))
+eachmovie_error1 <- as.data.frame(eachmovie_rec_error)
+
+eachmovie_pred2 <- as.data.frame(as(eachmovie_rec_pred2,"matrix"))
+eachmovie_error2 <- as.data.frame(eachmovie_rec_error2)
+
+eachmovie_pred3 <- as.data.frame(as(eachmovie_rec_pred3,"matrix"))
+eachmovie_error3 <- as.data.frame(eachmovie_rec_error3)
+
+eachmovie_pred4 <- as.data.frame(as(eachmovie_rec_pred4,"matrix"))
+eachmovie_error4 <- as.data.frame(eachmovie_rec_error4)
+
+
+#MSWEB
+msweb_pred1 <- as.data.frame(as(msweb_rec_pred,"matrix"))
+msweb_error1 <- as.data.frame(msweb_rec_error)
+
+msweb_pred2 <- as.data.frame(as(msweb_rec_pred2,"matrix"))
+msweb_error2 <- as.data.frame(msweb_rec_error2)
+
+msweb_pred3 <- as.data.frame(as(msweb_rec_pred3,"matrix"))
+msweb_error3 <- as.data.frame(msweb_rec_error3)
+
+msweb_pred4 <- as.data.frame(as(msweb_rec_pred4,"matrix"))
+msweb_error4 <- as.data.frame(msweb_rec_error4)
+
+##Merge Eachmovie error findings
+eachmovie_merge <- cbind(eachmovie_error1,eachmovie_error2,eachmovie_error3,eachmovie_error4)
+colnames(eachmovie_merge) <- c("Model1","Model2","Model3","Model4")
+
+#Re-organize into better dataframe
+algorithmlist <- c("Pearson Corr", "Pearson Corr", "Pearson Corr + Var Weight", "Pearson Corr + Var Weight")
+normalizationlist <- c("Z-Score","Mean Deviation","Z-Score","Mean Deviation")
+RMSElist_eachmovie <- as.numeric(eachmovie_merge[1,])
+MSElist_eachmovie <- as.numeric(eachmovie_merge[2,])
+MAElist_eachmovie <- as.numeric(eachmovie_merge[3,])
+
+eachmovie_errors_final <- data.frame(matrix(NA, nrow = 4, ncol = 5))
+eachmovie_errors_final[,1] <- algorithmlist
+eachmovie_errors_final[,2] <- normalizationlist
+eachmovie_errors_final[,3] <- RMSElist_eachmovie
+eachmovie_errors_final[,4] <- MSElist_eachmovie
+eachmovie_errors_final[,5] <- MAElist_eachmovie
+colnames(eachmovie_errors_final) <- c("Algorithm", "Normalization", "RMSE","MSE", "MAE")
+
+
+##Merge MSWEB errorfindings
+msweb_merge <- cbind(msweb_error1,msweb_error2,msweb_error3,msweb_error4)
+colnames(msweb_merge) <- c("Model1","Model2","Model3","Model4")
+
+RMSElist_msweb <- as.numeric(msweb_merge[1,])
+MSElist_msweb <- as.numeric(msweb_merge[2,])
+MAElist_msweb <- as.numeric(msweb_merge[3,])
+
+msweb_errors_final <- data.frame(matrix(NA, nrow = 4, ncol = 5))
+msweb_errors_final[,1] <- algorithmlist
+msweb_errors_final[,2] <- normalizationlist
+msweb_errors_final[,3] <- RMSElist_eachmovie
+msweb_errors_final[,4] <- MSElist_eachmovie
+msweb_errors_final[,5] <- MAElist_eachmovie
+colnames(msweb_errors_final) <- c("Algorithm", "Normalization", "RMSE","MSE", "MAE")
+
+
+
+######SAVE FINAL ERROR OUTPUT
+#print(eachmovie_errors_final)
+#print(msweb_errors_final)
+
+save(eachmovie_errors_final, file="eachmovie_PearsonCorrErrorOutput.RData")
+
+save(msweb_errors_final, file="msweb_PearsonCorrErrorOutput.RData")
+
+
+```
+
+
